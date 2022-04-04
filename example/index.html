@@ -1,0 +1,299 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+Design by Free CSS Templates
+http://www.freecsstemplates.org
+Released for free under a Creative Commons Attribution 2.5 License
+
+Name       : Familiar
+Description: A two-column, fixed-width design for 1024x768 screen resolutions.
+Version    : 1.0
+Released   : 20091206
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<title>Web Digital Signature</title>
+<meta name="keywords" content="" />
+<meta name="description" content="" />
+<link href="style.css" rel="stylesheet" type="text/css" media="screen" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha512-+NqPlbbtM1QqiK8ZAo4Yrj2c4lNQoGv8P79DPtKzj++l5jnN39rHA/xsqn8zE9l0uSoxaCdrOgFs6yjyfbBxSg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script crossorigin="anonymous" src="https://polyfill.io/v3/polyfill.min.js"></script>
+<script type="module" src="./index.js"></script>
+</head>
+<body>
+<script>
+
+var isUp = false;
+
+$( window ).ready(function() {
+	waitForServiceUp();
+});
+
+function waitForServiceUp()
+{
+	isServiceUp('onServiceUp');
+	window.setTimeout("monitorService()", 1500);        	
+}
+
+function monitorService()
+{
+	if(!isUp)
+	{
+		isServiceUp('onServiceUp');
+		window.setTimeout("monitorService()", 1500);        	
+	}	
+}
+
+function onServiceUp(up)
+{
+	if(!isUp && up)
+	{
+		alert("DSS service is up");
+		isUp = true;		
+	}
+}
+
+
+function onSignature(event)
+{
+	if(event.error)
+	{
+		$('#error').text(event.error.statusText);
+	}
+	else if(event.errorMessage)
+	{
+		$('#error').text(event.errorMessage);
+	}
+	else if(event.url)
+	{
+		$('#signed').empty();		
+		$('#signed').append($("<a href='" + event.url + "'> Scarica il file firmato </a>"));			
+	}
+	else
+	{
+		var b64Signature = event.signed;
+				
+		$('#signed').text(b64Signature);	
+	}
+}
+
+function onSignatureHash(event)
+{
+	if(event.Error)
+	{
+		$('#error').text(event.Error);
+	}	
+	else
+	{
+		var b64Signature = event.Result;
+				
+		$('#signed').text(b64Signature);	
+	}
+}
+
+function onVerify(event)
+{
+	if(event.error)
+	{
+		$('#error').text(event.error);
+	}
+	else
+	{
+		var result = event.result;
+				
+		$('#signed').text(JSON.stringify(result));	
+	}
+}
+
+function onSOAPResponse(event)
+{
+	if(event.error)
+	{
+		$('#error').text(event.error.statusText);
+	}
+	else if(event.errorMessage)
+	{
+		$('#error').text(event.errorMessage);
+	}
+	else
+	{			
+		$('#signed').text(event.result);	
+	}
+}
+
+function signFile()
+{
+	if(!isUp)
+	{
+		alert("DSS service is not up");			
+		return;	
+	}
+	
+	var pin = $('#pin').val();
+	var fd = new FormData($("#fileToSign").get(0));
+	var result = $('input[name=result]:checked').val(); 
+	var uploadurl = $('#uploadUrl').val();
+	var filename = $('#filename').val();
+	var signatureType = $('input[name=signatureType]:checked').val();
+	
+	dssSignFile(pin, fd, signatureType, filename, "bit4xpki", result, uploadUrl, onSignature);
+}
+
+function signUrl()
+{
+	if(!isUp)
+	{
+		alert("DSS service is not up");			
+		return;	
+	}
+	
+	var pin = $('#pin').val();	
+	var url = $('#fileurl').val();
+	var result = $('input[name=result]:checked').val();
+	var uploadurl = $('#uploadUrl').val();
+	var filename = $('#filename').val();
+	var signatureType = $('input[name=signatureType]:checked').val();
+	
+	dssSignUrl(pin, url, signatureType, filename, "bit4xpki", result, uploadurl, onSignature);
+}
+
+function sign()
+{
+	var pin = $('#pin').val();
+	var content = $('#content').val();
+	var result = $('input[name=result]:checked').val();
+	var uploadurl = $('#uploadUrl').val();
+	var filename = $('#filename').val();
+	var signatureType = $('input[name=signatureType]:checked').val();	
+	dssSignContent(pin, content, signatureType, filename, "bit4xpki", result, uploadurl, onSignature);
+}
+
+function signHash()
+{
+	var jsonhash = $('#jsonhash').val();
+	dssSignHash(jsonhash, onSignatureHash);
+}
+
+function findSignCertificates()
+{	
+	dssSignHash(onCertificates);
+}
+
+function verifyFile()
+{
+	if(!isUp)
+	{
+		alert("DSS service is not up");			
+		return;	
+	}
+	
+	var fd = new FormData($("#fileToSign").get(0));	
+	dssVerifyFile(fd, onVerify);
+}
+
+function verify()
+{
+	var content = $('#content').val();
+	var signatureType = $('input[name=signatureType]:checked').val();	
+	dssVerifyContent(content, signatureType, onVerify);
+}
+
+
+function sendSoap()
+{
+	var soap = $('#soap').val();
+	var pin = $('#pin').val();
+	var url = $('#soapUrl').val();
+
+	sendSOAP(url, pin, soap, onSOAPResponse);			
+}
+
+</script>
+
+<div class="post">
+	<h2 class="title"><a href="#">Web Digital Signature</a></h2>
+	<br/><br/>
+	<table>
+	<tr>
+	<td>
+	<label for="pin">Insert your PIN:</label><br/>
+	<input type="text" id="pin" name="pin"></input>
+	<br/><br/>
+	<label for="result">Signed File as link, base64 or upload?</label><br/>
+	<input type="radio" name="result" value="link" checked> Link &nbsp; <input type="radio" name="result" value="base64"> Base64 <input type="radio" name="result" value="upload"> Upload
+	<br/><br/>
+	<label for="signatureType">Signature typr</label><br/>
+	<input type="radio" name="signatureType" value="cades" checked> CAdES &nbsp; <input type="radio" name="signatureType" value="pades"> PAdES
+	<br/><br/>
+	<label for="filename">Name of the signed file:</label><br/>
+	<input type="text" id="filename" name="filename"></input>
+	<br/><br/>
+	<label for="uploadUrl">Upload URL:</label><br/>
+	<input type="text" id="uploadUrl" name="uploadUrl"></input>
+	<br/><br/><br/>
+	<form id="fileToSign" enctype="multipart/form-data" method="post" name="fileToSign" action="http://151.236.58.47:8000/signFile?pin=1234&type=p7m&pkcs11=vcki">
+	<label>Select the file to sign:</label><br/>
+	<input id="file" type="file" name="file" required />
+	<!--  
+	<input type="submit"></input>
+	-->
+	</form>
+	<br/>
+	<input type="button" id="signButton" onclick="signFile();" value="Sign file"></input>
+	<br/>
+	<input type="button" id="verifyButton" onclick="verifyFile();" value="Verify file"></input>
+	</td>
+	</tr>
+	<tr>
+	<td>
+	<br/><br/>
+	<label>URL of the file to sign:</label><br/>
+	<input id="fileurl" type="text" name="fileurl"/>
+	<br/><br/>
+	<input type="button" id="signUrlButton" onclick="signUrl();" value="Sign URL"></input>
+	</td>
+	</tr>
+	<tr>
+	<td>
+	<br/>
+	<br/><br/>
+	<label>Content to sign:</label><br/><br/>
+	<textarea rows="10" cols="50" id="content" name="content"></textarea >
+	<br/><br/>
+	<input type="button" id="sign" onclick="sign();" value="Sign content"></input>      
+	<br/>
+	<input type="button" id="verify" onclick="verify();" value="Verify content"></input>      
+	</td></tr>
+	<tr>
+	<td>
+	<br/><br/>
+	<label>URL del servizio SOAP:</label><br/>
+	<input id="soapUrl" type="text" name="soapUrl"/>
+	<br/><br/>
+	<label>SOAP da inviare</label><br/><br/>
+	<textarea rows="10" cols="50" id="soap" name="soap"></textarea >
+	<br/><br/>
+	<input type="button" id="sendSoap" onclick="sendSoap();" value="Invia SOAP"></input>      
+	</td></tr>
+	<tr>
+	<td>
+	<br/>
+	<br/><br/>
+	<label>JSON with Hash to sign</label><br/><br/>
+	<textarea rows="10" cols="50" id="jsonhash" name="jsonhash"></textarea >
+	<br/><br/>
+	<input type="button" id="sign" onclick="signHash();" value="Sign json hash"></input>      
+	</td></tr>
+	</table>
+	<br/>
+	<br/>        	
+	<b><span id="signed">&nbsp;</span></b>
+	<br/>
+	<br/>        	       
+	<span id="error" style="color: red; font-weight: bold";>&nbsp;</span>
+</div>
+
+
+</body>
+</html>
